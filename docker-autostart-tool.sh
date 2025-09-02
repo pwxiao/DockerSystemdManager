@@ -45,6 +45,8 @@ Docker 容器自启动服务创建工具
     -n, --network <网络>       指定网络
     -m, --memory <内存限制>    内存限制 (如: 512m, 1g)
     -c, --cpu <CPU限制>        CPU限制 (如: 0.5, 1.0)
+    --gpus <GPU配置>           GPU配置 (如: all, device=0,1)
+    --runtime <运行时>         容器运行时 (如: nvidia)
     -d, --description <描述>   服务描述
     -f, --force                强制覆盖已存在的服务
     -h, --help                 显示此帮助信息
@@ -53,6 +55,7 @@ Docker 容器自启动服务创建工具
     $0 myapp nginx:latest -p 8080:80 -d "Nginx Web Server"
     $0 myredis redis:7 -p 6379:6379 -m 256m -d "Redis Cache Server"
     $0 myapp myapp:latest -p 3000:3000 -e "NODE_ENV=production" -v "/data:/app/data"
+    $0 comfyui comfyui:latest -p 8188:8188 --gpus all --runtime nvidia -d "ComfyUI AI服务"
 
 EOF
 }
@@ -130,6 +133,16 @@ generate_docker_run_cmd() {
     # 添加CPU限制
     if [[ -n "$CPU_LIMIT" ]]; then
         cmd="$cmd --cpus $CPU_LIMIT"
+    fi
+    
+    # 添加GPU支持
+    if [[ -n "$GPUS" ]]; then
+        cmd="$cmd --gpus $GPUS"
+    fi
+    
+    # 添加运行时
+    if [[ -n "$RUNTIME" ]]; then
+        cmd="$cmd --runtime $RUNTIME"
     fi
     
     # 添加镜像名称
@@ -253,6 +266,14 @@ main() {
                 ;;
             -c|--cpu)
                 CPU_LIMIT="$2"
+                shift 2
+                ;;
+            --gpus)
+                GPUS="$2"
+                shift 2
+                ;;
+            --runtime)
+                RUNTIME="$2"
                 shift 2
                 ;;
             -d|--description)
