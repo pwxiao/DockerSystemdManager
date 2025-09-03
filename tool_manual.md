@@ -115,50 +115,43 @@ das comfyui comfyui:latest -p 8188:8188 --gpus all -m "6g" -d "ComfyUI AI图像�
 ---
 
 
-### 示例二: 基于现有镜像构建新的镜像
+### 示例二: 基于 Base 镜像构建新的镜像
 
-目标：基于 `my-sd-webui:1.1` 添加模型文件，生成新镜像 `my-custom-sd-webui:1.0`。
+目标：以 `nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04` 为 Base，安装所需依赖（如 ComfyUI），并打包为 `my-custom-image:v1`。
 
 1) 查看现有镜像
 ```bash
-docker images | grep my-sd-webui
-# 示例输出
-# REPOSITORY     TAG   IMAGE ID       CREATED         SIZE
-# my-sd-webui    1.1   534d2e1bc287   3 hours ago     32.8GB
-# my-sd-webui    1.0   82777dadd602   21 hours ago    32.8GB
-# my-sd-webui    base  d2b5eb7a7455   22 hours ago    20.5GB
+docker images
+
+REPOSITORY    TAG                                 IMAGE ID       CREATED         SIZE
+
+nvidia/cuda   12.1.1-cudnn8-runtime-ubuntu22.04   02f0c5f1a54b   22 months ago   3.38GB
 ```
 
-2) 启动临时构建容器
+2) 启动临时构建容器并进入
 ```bash
-docker run -p 7860:7860 --gpus all --name sd-webui-build my-sd-webui:1.1 tail -f /dev/null
+docker run -it --gpus all --name custom-build nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04 bash
 ```
 
-3) 进入容器
-```bash
-docker exec -it sd-webui-build bash
-```
+3) 在容器内安装所需软件（示例：ComfyUI）
+- 根据需要自行安装软件
 
-4) 下载模型到 models 目录
-可以从 Hugging Face 下载模型：
-```bash
-# 使用 wget（如需登录，添加 Authorization 头）
-wget -O "model_file_name" "download-url" --header="Authorization: Bearer hf_xxx"
-
-# 或使用 huggingface-cli
-huggingface-cli download --resume-download stabilityai/stable-diffusion-3-medium --local-dir ./models/Stable-diffusion/ --token hf_xxxxx
-```
-提示：需要登录的模型需携带 `Authorization` 头或在命令中追加 `--token`。
-
-5) 退出容器
+4) 退出容器
 ```bash
 exit
 ```
 
-6) 基于容器打包新镜像
+5) 将已配置好的容器打包为新镜像
 ```bash
-docker commit sd-webui-build my-custom-sd-webui:1.0
+docker commit custom-build my-custom-image:v1
 ```
+
+6) 可选：清理临时容器
+```bash
+docker rm -f custom-build
+```
+
+至此，新镜像已构建完成。
 
 
 
