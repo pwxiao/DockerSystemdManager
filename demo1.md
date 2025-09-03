@@ -1,5 +1,5 @@
 
-### 示例二: 基于 Base 镜像构建新的镜像
+### 示例一: 基于 Base 镜像构建新的镜像
 
 目标：以 `nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04` 为 Base，安装所需依赖（如 ComfyUI），并打包为 `my-custom-image:v1`。
 
@@ -50,3 +50,5 @@ das my-custom-container my-custom-image:v1 --gpus all -d "My custom image servic
 ```bash
 dsm status my-custom-container
 ```
+
+下一节 [示例二:自构建镜像-构建 ComfyUI 应用.md](demo2.md)
