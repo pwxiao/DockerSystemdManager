@@ -7,7 +7,6 @@
 3. [镜像构建](#镜像构建)
 4. [工具安装](#工具安装)
 5. [快速上手](#快速上手)
-6. [常见问题](#常见问题)
 
 ---
 
@@ -26,46 +25,13 @@
 ## ⚙️ 环境准备
 
 ### 系统要求
-- **系统**: Linux (Ubuntu 16.04+/CentOS 7+)
-- **Docker**: 1.13+
-- **权限**: sudo 权限
-
-### 快速检查
-```bash
-# 检查 Docker
-docker --version
-
-# 检查权限
-sudo whoami
-```
-
-### 安装 Docker（Ubuntu）
-```bash
-# 快速安装
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-
-# 启动服务
-sudo systemctl start docker
-sudo systemctl enable docker
-
-# 验证安装
-sudo docker run hello-world
-```
-
+- **系统**: Linux (Ubuntu 22.04 推荐22.04)
 ---
 
 ## 🏗️ 镜像构建
 
-### 方法1：拉取现有镜像
-```bash
-# 常用镜像
-docker pull nginx:latest
-docker pull node:18-alpine
-docker pull mysql:8.0
-```
 
-### 方法2：自构建镜像-构建  ComfyUI 应用
+### 示例一:自构建镜像-构建 ComfyUI 应用
 
 **1. 创建项目目录**
 ```bash
@@ -74,7 +40,7 @@ mkdir comfyui-docker && cd comfyui-docker
 
 **2. 创建 Dockerfile**
 ```bash
-# 使用Python 3.12官方镜像作为基础镜像
+# 使用Python 3.12官方镜像
 FROM python:3.12-slim
 
 # 设置工作目录
@@ -146,8 +112,58 @@ docker build -t comfyui:latest .
 ```bash
 das comfyui comfyui:latest -p 8188:8188 --gpus all -m "6g" -d "ComfyUI AI图像生成服务(模型已内置)" 
 ```
-
 ---
+
+
+### 示例二: 基于现有镜像构建新的镜像
+
+目标：基于 `my-sd-webui:1.1` 添加模型文件，生成新镜像 `my-custom-sd-webui:1.0`。
+
+1) 查看现有镜像
+```bash
+docker images | grep my-sd-webui
+# 示例输出
+# REPOSITORY     TAG   IMAGE ID       CREATED         SIZE
+# my-sd-webui    1.1   534d2e1bc287   3 hours ago     32.8GB
+# my-sd-webui    1.0   82777dadd602   21 hours ago    32.8GB
+# my-sd-webui    base  d2b5eb7a7455   22 hours ago    20.5GB
+```
+
+2) 启动临时构建容器
+```bash
+docker run -p 7860:7860 --gpus all --name sd-webui-build my-sd-webui:1.1 tail -f /dev/null
+```
+
+3) 进入容器
+```bash
+docker exec -it sd-webui-build bash
+```
+
+4) 下载模型到 models 目录
+可以从 Hugging Face 下载模型：
+```bash
+# 使用 wget（如需登录，添加 Authorization 头）
+wget -O "model_file_name" "download-url" --header="Authorization: Bearer hf_xxx"
+
+# 或使用 huggingface-cli
+huggingface-cli download --resume-download stabilityai/stable-diffusion-3-medium --local-dir ./models/Stable-diffusion/ --token hf_xxxxx
+```
+提示：需要登录的模型需携带 `Authorization` 头或在命令中追加 `--token`。
+
+5) 退出容器
+```bash
+exit
+```
+
+6) 基于容器打包新镜像
+```bash
+docker commit sd-webui-build my-custom-sd-webui:1.0
+```
+
+
+
+
+
 
 ## 📦 工具安装
 
@@ -184,6 +200,8 @@ dsm --help
 
 ---
 
+
+
 ## 🎯 快速上手
 
 ### 基本语法
@@ -219,84 +237,3 @@ dsm stop my-app
 
 ---
 
-## ❓ 常见问题
-
-### Q1: 服务启动失败？
-```bash
-# 查看状态和日志
-dsm status myapp
-dsm logs myapp
-
-# 检查镜像
-docker images | grep myapp
-
-# 手动测试
-docker run --rm -it myapp:1.0 /bin/sh
-```
-
-### Q2: 端口被占用？
-```bash
-# 查看端口占用
-sudo netstat -tulpn | grep :3000
-
-# 更换端口
-das myapp myapp:1.0 -p 3001:3000 -f
-```
-
-### Q3: 如何更新服务？
-```bash
-# 停止服务
-dsm stop myapp
-
-# 拉取新镜像
-docker pull my-node-app:2.0
-
-# 重新创建服务
-das myapp my-node-app:2.0 -p 3000:3000 -f
-```
-
-### Q4: 进入容器调试
-```bash
-# 进入运行中的容器
-docker exec -it myapp /bin/bash
-
-# 查看容器进程
-docker exec myapp ps aux
-```
-
-### Q5: ComfyUI 服务问题排查
-```bash
-# 检查 ComfyUI 服务状态
-dsm status comfyui-service
-
-# 查看 ComfyUI 日志
-dsm logs comfyui-service
-
-# 检查模型文件是否存在
-docker exec comfyui-service ls -la /app/models/checkpoints
-
-# 检查 GPU 支持（如果使用 GPU 版本）
-docker exec comfyui-service nvidia-smi
-
-# 重新下载模型
-# 先停止服务，清空模型目录，然后重启
-dsm stop comfyui-service
-sudo rm -rf /data/comfyui/models/*
-# 手动下载模型到 /data/comfyui/models/checkpoints/
-dsm start comfyui-service
-```
-
----
-
-## 🎯 下一步
-
-恭喜！您已经掌握了基本使用方法。
-
-**进阶学习：**
-- 多容器应用部署
-- 服务监控和告警
-- 自动化部署脚本
-
-**获取帮助：**
-- `das --help` - 查看创建工具帮助
-- `dsm --help` - 查看管理工具帮助
