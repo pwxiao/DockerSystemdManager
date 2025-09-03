@@ -161,6 +161,16 @@ WantedBy=multi-user.target
 
 ### 示例
 
+#### 等价转换：docker run → das
+
+```bash
+# Docker 命令（后台运行 + 使用全部 GPU + 指定容器名）
+docker run -d --gpus all --name my-custom-container my-custom-image:v1
+
+# 等价的 das 命令（由 systemd 托管与守护）
+das my-custom-container my-custom-image:v1 --gpus all -d "My custom image service"
+```
+
 #### 基础 Web 服务
 
 ```bash
