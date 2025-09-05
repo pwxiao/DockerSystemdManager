@@ -32,34 +32,6 @@
 ```
 
 
-### 工具 安装
-
-#### 快速安装
-
-```bash
-# 下载工具集
-git clone <repository-url>
-cd docker-autostart-tools
-
-# 运行安装脚本
-sudo ./install.sh
-```
-
-#### 手动安装
-
-```bash
-# 复制工具脚本到系统路径
-sudo cp docker-autostart-tool.sh /usr/local/bin/docker-autostart
-sudo cp docker-service-manager.sh /usr/local/bin/docker-service-manager
-
-# 设置执行权限
-sudo chmod +x /usr/local/bin/docker-autostart
-sudo chmod +x /usr/local/bin/docker-service-manager
-
-# 创建简写命令
-sudo ln -sf /usr/local/bin/docker-autostart /usr/local/bin/das
-sudo ln -sf /usr/local/bin/docker-service-manager /usr/local/bin/dsm
-```
 ## docker-autostart（创建）
 
 ### 基本语法
@@ -466,34 +438,6 @@ dsm start webapp
 dsm cleanup
 ```
 
-### 开发环境部署
-
-```bash
-# 开发数据库
-dsm dev-db postgres:14 \
-    -p 5432:5432 \
-    -e "POSTGRES_DB=devapp" \
-    -e "POSTGRES_USER=dev" \
-    -e "POSTGRES_PASSWORD=devpass" \
-    -v "dev-postgres:/var/lib/postgresql/data" \
-    -d "Development Database"
-
-# 开发应用
-dsm dev-app node:16-alpine \
-    -p 3000:3000 \
-    -e "NODE_ENV=development" \
-    -e "DATABASE_URL=postgresql://dev:devpass@localhost:5432/devapp" \
-    -v "/home/dev/myapp:/usr/src/app" \
-    -v "/home/dev/node_modules:/usr/src/app/node_modules" \
-    -d "Development Application"
-
-# 开发代理
-dsm dev-proxy nginx:alpine \
-    -p 8080:80 \
-    -v "/home/dev/nginx.conf:/etc/nginx/nginx.conf:ro" \
-    -d "Development Proxy"
-```
-
 ## 最佳实践（要点）
 
 ### 1. 服务命名规范
@@ -565,23 +509,7 @@ EOF
 das app myapp:latest --env-file /etc/myapp/prod.env
 ```
 
-### 6. 日志管理策略
 
-```bash
-# 定期查看关键服务日志
-dsm logs webapp -n 100 | grep ERROR
-dsm logs db -n 50 | grep WARN
-
-# 设置日志轮转（在宿主机上配置）
-# /etc/logrotate.d/docker-services
-/var/lib/docker/containers/*/*.log {
-    daily
-    rotate 7
-    compress
-    delaycompress
-    copytruncate
-}
-```
 
 ## 故障排除（速查）
 
@@ -635,24 +563,7 @@ netstat -tulpn | grep :8080
 docker exec myapp curl localhost:80
 ```
 
-#### 4. 性能问题
-
-**问题**：容器运行缓慢或频繁重启
-
-```bash
-# 检查资源使用
-docker stats myapp
-dsm monitor
-
-# 调整资源限制
-# 编辑服务文件添加更多资源
-dsm backup myapp
-# 手动编辑 /etc/systemd/system/myapp.service
-systemctl daemon-reload
-dsm restart myapp
-```
-
-#### 5. 数据丢失问题
+#### 4. 数据丢失问题
 
 **问题**：容器重启后数据丢失
 
@@ -668,58 +579,3 @@ docker volume ls
 docker volume inspect myapp-data
 ```
 
-### 调试命令集合
-
-```bash
-# 系统级诊断
-systemctl status docker
-systemctl list-units --type=service --state=failed
-docker system info
-docker system df
-
-# 服务级诊断
-dsm list
-dsm status <service>
-systemctl status <service>.service
-journalctl -u <service>.service --no-pager
-
-# 容器级诊断
-docker ps -a
-docker logs <container>
-docker inspect <container>
-docker exec <container> <command>
-
-# 网络诊断
-docker network ls
-docker port <container>
-netstat -tulpn
-ss -tulpn
-
-# 存储诊断
-docker volume ls
-docker system df
-df -h
-```
-
-### 恢复操作
-
-```bash
-# 服务恢复流程
-1. 停止问题服务
-   dsm stop myapp
-
-2. 备份当前配置
-   dsm backup myapp
-
-3. 检查和修复配置
-   vim /etc/systemd/system/myapp.service
-
-4. 重新加载配置
-   systemctl daemon-reload
-
-5. 启动服务
-   dsm start myapp
-
-6. 验证服务状态
-   dsm status myapp
-```

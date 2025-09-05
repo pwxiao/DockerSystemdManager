@@ -1,4 +1,4 @@
-### 示例二:自构建镜像-构建 ComfyUI 应用
+<!-- ### 示例二:自构建镜像-构建 ComfyUI 应用
 
 **1. 创建项目目录**
 ```bash
@@ -80,4 +80,4 @@ docker build -t comfyui:latest .
 das comfyui comfyui:latest -p 8188:8188 --gpus all -m "6g" -d "ComfyUI AI图像生成服务(模型已内置)" 
 ```
 
----
+--- -->
